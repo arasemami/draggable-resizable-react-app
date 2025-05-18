@@ -1,13 +1,55 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import './App.css';
+
+const SNAP_THRESHOLD = 10;
+
+const DraggableResizableDiv = React.memo(function ({
+  div,
+  onDragStart,
+  onResizeStart,
+  onRemove,
+}) {
+  return (
+    <div
+      onMouseDown={(e) => onDragStart(e, div.id)}
+      className="draggable-div"
+      style={{
+        left: div.x,
+        top: div.y,
+        width: div.width,
+        height: div.height,
+        backgroundColor: div.color,
+      }}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(div.id);
+        }}
+        className="remove-button"
+        aria-label="Remove div"
+      >
+        ×
+      </button>
+
+      <div
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onResizeStart(e, div.id);
+        }}
+        className="resize-handle"
+      />
+    </div>
+  );
+});
 
 function DraggableResizableDivs() {
   const [divs, setDivs] = useState([]);
-  const draggingId = useRef(null);
-  const resizingId = useRef(null);
-  const offset = useRef({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(null);
+  const [resizing, setResizing] = useState(null);
 
   const addDiv = () => {
-    setDivs(prev => [
+    setDivs((prev) => [
       ...prev,
       {
         id: Date.now(),
@@ -15,150 +57,164 @@ function DraggableResizableDivs() {
         y: 50,
         width: 45,
         height: 45,
-        color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+        color:
+          '#' +
+          Math.floor(Math.random() * 16777215)
+            .toString(16)
+            .padStart(6, '0'),
       },
     ]);
   };
 
-  const handleMouseDownDrag = (e, id) => {
-    draggingId.current = id;
-    resizingId.current = null;
-    const div = divs.find(d => d.id === id);
-    if (div) {
-      offset.current = {
-        x: e.clientX - div.x,
-        y: e.clientY - div.y,
-      };
-    }
-  };
+  const onDragStart = useCallback(
+    (e, id) => {
+      e.preventDefault();
+      const div = divs.find((d) => d.id === id);
+      if (!div) return;
+      setDragging({
+        id,
+        offsetX: e.clientX - div.x,
+        offsetY: e.clientY - div.y,
+      });
+    },
+    [divs]
+  );
 
-  const handleMouseDownResize = (e, id) => {
-    e.stopPropagation();
-    resizingId.current = id;
-    draggingId.current = null;
-    const div = divs.find(d => d.id === id);
-    if (div) {
-      offset.current = {
-        x: e.clientX,
-        y: e.clientY,
-        width: div.width,
-        height: div.height,
-      };
-    }
-  };
+  const onResizeStart = useCallback(
+    (e, id) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const div = divs.find((d) => d.id === id);
+      if (!div) return;
+      setResizing({
+        id,
+        startX: e.clientX,
+        startY: e.clientY,
+        startWidth: div.width,
+        startHeight: div.height,
+      });
+    },
+    [divs]
+  );
 
-  const handleMouseMove = e => {
-    if (draggingId.current !== null) {
-      setDivs(prev =>
-        prev.map(d => {
-          if (d.id === draggingId.current) {
-            return {
-              ...d,
-              x: e.clientX - offset.current.x,
-              y: e.clientY - offset.current.y,
-            };
+  useEffect(() => {
+    function onMouseMove(e) {
+      if (dragging) {
+        const { id, offsetX, offsetY } = dragging;
+        let newX = e.clientX - offsetX;
+        let newY = e.clientY - offsetY;
+
+        const currentDiv = divs.find((d) => d.id === id);
+        if (!currentDiv) return;
+
+        divs.forEach((d) => {
+          if (d.id === id) return;
+
+          // Snap X axis
+          if (Math.abs(newX - (d.x + d.width)) < SNAP_THRESHOLD) {
+            newX = d.x + d.width;
+          } else if (
+            Math.abs(newX + currentDiv.width - d.x) < SNAP_THRESHOLD
+          ) {
+            newX = d.x - currentDiv.width;
           }
-          return d;
-        })
-      );
-    } else if (resizingId.current !== null) {
-      setDivs(prev =>
-        prev.map(d => {
-          if (d.id === resizingId.current) {
-            const newWidth = Math.max(10, offset.current.width + (e.clientX - offset.current.x));
-            const newHeight = Math.max(10, offset.current.height + (e.clientY - offset.current.y));
-            return {
-              ...d,
-              width: newWidth,
-              height: newHeight,
-            };
+
+          // Snap Y axis
+          if (Math.abs(newY - (d.y + d.height)) < SNAP_THRESHOLD) {
+            newY = d.y + d.height;
+          } else if (
+            Math.abs(newY + currentDiv.height - d.y) < SNAP_THRESHOLD
+          ) {
+            newY = d.y - currentDiv.height;
           }
-          return d;
-        })
-      );
+        });
+
+        // Snap to wrapper edges
+        if (Math.abs(newX) < SNAP_THRESHOLD) newX = 0;
+        if (Math.abs(newY) < SNAP_THRESHOLD) newY = 0;
+
+        setDivs((prev) =>
+          prev.map((d) =>
+            d.id === id ? { ...d, x: newX, y: newY } : d
+          )
+        );
+      } else if (resizing) {
+        const { id, startX, startY, startWidth, startHeight } = resizing;
+        let newWidth = Math.max(10, startWidth + e.clientX - startX);
+        let newHeight = Math.max(10, startHeight + e.clientY - startY);
+
+        const currentDiv = divs.find((d) => d.id === id);
+        if (!currentDiv) return;
+
+        divs.forEach((d) => {
+          if (d.id === id) return;
+
+          // Snap width
+          if (
+            Math.abs(currentDiv.x + newWidth - d.x) < SNAP_THRESHOLD
+          ) {
+            newWidth = d.x - currentDiv.x;
+          } else if (
+            Math.abs(currentDiv.x + newWidth - (d.x + d.width)) <
+            SNAP_THRESHOLD
+          ) {
+            newWidth = d.x + d.width - currentDiv.x;
+          }
+
+          // Snap height
+          if (
+            Math.abs(currentDiv.y + newHeight - d.y) < SNAP_THRESHOLD
+          ) {
+            newHeight = d.y - currentDiv.y;
+          } else if (
+            Math.abs(currentDiv.y + newHeight - (d.y + d.height)) <
+            SNAP_THRESHOLD
+          ) {
+            newHeight = d.y + d.height - currentDiv.y;
+          }
+        });
+
+        setDivs((prev) =>
+          prev.map((d) =>
+            d.id === id
+              ? { ...d, width: newWidth, height: newHeight }
+              : d
+          )
+        );
+      }
     }
-  };
 
-  const handleMouseUp = () => {
-    draggingId.current = null;
-    resizingId.current = null;
-  };
+    function onMouseUp() {
+      setDragging(null);
+      setResizing(null);
+    }
 
-  // Remove div by id
-  const removeDiv = id => {
-    setDivs(prev => prev.filter(d => d.id !== id));
-  };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [dragging, resizing, divs]);
+
+  const removeDiv = useCallback((id) => {
+    setDivs((prev) => prev.filter((d) => d.id !== id));
+  }, []);
 
   return (
-    <div
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      style={{ width: '100%', height: '100vh', position: 'relative', userSelect: 'none' }}
-    >
-      <button
-        onClick={addDiv}
-        style={{ margin: '10px', padding: '10px', cursor: 'pointer' }}
-      >
+    <div className={`wrapper ${dragging || resizing ? 'no-select' : ''}`}>
+      <button onClick={addDiv} className="add-button">
         Add Draggable & Resizable Div
       </button>
 
-      {divs.map(div => (
-        <div
+      {divs.map((div) => (
+        <DraggableResizableDiv
           key={div.id}
-          onMouseDown={e => handleMouseDownDrag(e, div.id)}
-          style={{
-            position: 'absolute',
-            left: div.x,
-            top: div.y,
-            width: div.width,
-            height: div.height,
-            backgroundColor: div.color,
-            cursor: 'grab',
-            boxSizing: 'border-box',
-            border: '1px solid #444',
-          }}
-        >
-          {/* Remove button */}
-          <button
-            onClick={e => {
-              e.stopPropagation();  
-              removeDiv(div.id);
-            }}
-            style={{
-              position: 'absolute',
-              top: -10,
-              right: -10,
-              width: 20,
-              height: 20,
-              borderRadius: '50%',
-              border: 'none',
-              backgroundColor: 'red',
-              color: 'white',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              lineHeight: 1,
-              padding: 0,
-            }}
-            aria-label="Remove div"
-          >
-            ×
-          </button>
-
-          {/* Resize handle */}
-          <div
-            onMouseDown={e => handleMouseDownResize(e, div.id)}
-            style={{
-              position: 'absolute',
-              width: '10px',
-              height: '10px',
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'darkgrey',
-              cursor: 'nwse-resize',
-            }}
-          />
-        </div>
+          div={div}
+          onDragStart={onDragStart}
+          onResizeStart={onResizeStart}
+          onRemove={removeDiv}
+        />
       ))}
     </div>
   );
