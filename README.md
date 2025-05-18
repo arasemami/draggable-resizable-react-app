@@ -1,70 +1,90 @@
-# Getting Started with Create React App
+# Draggable and Resizable Divs React Component
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A simple React component that allows users to dynamically add, drag, resize, and remove colored div elements on the page — built without any external libraries or CSS frameworks.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Add new divs**: Create multiple divs dynamically with random colors.
+- **Drag & drop**: Move divs freely anywhere within the viewport.
+- **Resizable**: Adjust the width and height of each div using a resize handle.
+- **Remove divs**: Easily delete any div with a dedicated remove button.
+- **No external dependencies**: Pure React with inline styles, no Tailwind CSS or other CSS frameworks.
 
-### `npm start`
+## Demo
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+![Demo GIF or Screenshot here – if available]
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation
 
-### `npm test`
+1. Clone the repository or copy the component into your React project:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+git clone git@github.com:arasemami/draggable-resizable-react-app.git
+cd draggable-resizable-divs
+```
 
-### `npm run build`
+2. Install dependencies (if you set up a full React app):
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. Run the app:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+npm start
+```
 
-### `npm run eject`
+## Usage
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Import the component into your React application and include it in your JSX:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```jsx
+import DraggableResizableDivs from './DraggableResizableDivs';
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+function App() {
+  return (
+    <div>
+      <DraggableResizableDivs />
+    </div>
+  );
+}
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+export default App;
+```
 
-## Learn More
+## Component API
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Prop  | Type | Description                     | Default |
+|-------|------|---------------------------------|---------|
+| *Currently no props* |  | The component can be extended to accept props such as container size, initial divs, etc. | N/A     |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## How It Works
 
-### Code Splitting
+- **State management**: Maintains an array of div objects with properties like position, size, and color.
+- **Dragging**: Listens for mouse events to update div position on drag.
+- **Resizing**: Provides a handle on each div corner to change width and height interactively.
+- **Removal**: Each div has a remove button that deletes it from the state.
+- **Performance**: Uses React hooks and event delegation efficiently for smooth user experience.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Future Improvements
 
-### Analyzing the Bundle Size
+- Add touch support for mobile devices.
+- Implement grid snapping for positioning and resizing.
+- Add boundaries to prevent dragging/resizing outside container.
+- Enable customizable initial divs via props.
+- Add animation for drag, resize, and remove actions.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Contributing
 
-### Making a Progressive Web App
+Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/yourusername/draggable-resizable-divs/issues) if you want to contribute.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feature/NewFeature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/NewFeature`)
+5. Open a Pull Request
 
-### Advanced Configuration
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
