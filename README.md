@@ -1,5 +1,8 @@
 # Draggable and Resizable Divs React Component
 
+![My Image](https://raw.githubusercontent.com/arasemami/draggable-resizable-react-app/main/s-01.png)
+
+
 A simple React component that allows users to dynamically add, drag, resize, and remove colored div elements on the page — built without any external libraries or CSS frameworks.
 
 ## Features
